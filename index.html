@@ -12,36 +12,109 @@
       background-color: #0f0f0f;
       color: white;
       display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100vh;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: #1a1a1a;
+    }
+    .header .info {
+      display: flex;
+      align-items: center;
+    }
+    .register-box {
+      background-color: #333;
+      padding: 8px 16px;
+      border-radius: 20px;
+      margin-left: 10px;
+      color: white;
+      border: none;
+    }
+    .chat-container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh;
       text-align: center;
+      padding: 0 20px;
     }
-    .container {
-      padding: 20px;
-      max-width: 90%;
+    .chat-box {
+      width: 100%;
+      max-width: 600px;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      margin: 10px 0;
     }
-    h1 {
-      font-size: 2.5em;
-      margin-bottom: 0.5em;
-    }
-    p {
+    .chat-response {
+      margin-top: 10px;
       font-size: 1.2em;
     }
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 2em;
-      }
-      p {
-        font-size: 1em;
-      }
+    .input-area {
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      background-color: #1a1a1a;
+    }
+    .input-area form {
+      display: flex;
+      width: 100%;
+      max-width: 600px;
+    }
+    .input-area input[type="text"] {
+      flex: 1;
+      padding: 12px;
+      border-radius: 20px;
+      border: none;
+      margin-right: 10px;
+    }
+    .input-area input[type="submit"] {
+      padding: 12px 20px;
+      border-radius: 20px;
+      border: none;
+      background-color: #4caf50;
+      color: white;
+      cursor: pointer;
     }
   </style>
+  <script>
+    function handleForm(event) {
+      event.preventDefault();
+      const chatBox = document.getElementById("chatBox");
+      const response = document.getElementById("chatResponse");
+      if (chatBox.value.trim() !== "") {
+        response.innerText = "Upps! Die Software ist noch nicht fertig gecoded.";
+        chatBox.value = "";
+      }
+    }
+  </script>
 </head>
 <body>
-  <div class="container">
-    <h1>SkriptAI. Öffentlich Trainiertes Modell</h1>
-    <p>Wir planen unseren Launch am 05.06.2025.</p>
+  <div class="header">
+    <div class="info">
+      <span>Registrieren</span>
+      <input type="text" class="register-box" placeholder="Regristieren">
+    </div>
+    <div>
+      <span>Registrieren um Chats abzuspeichern</span>
+    </div>
+  </div>
+  <div class="chat-container">
+    <h1>SkriptAI</h1>
+    <p>Wir sind bald verfügbar.</p>
+    <div class="chat-response" id="chatResponse"></div>
+  </div>
+  <div class="input-area">
+    <form onsubmit="handleForm(event)">
+      <input type="text" id="chatBox" placeholder="Nachricht eingeben...">
+      <input type="submit" value="Senden">
+    </form>
   </div>
 </body>
 </html>
