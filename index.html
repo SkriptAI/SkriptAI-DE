@@ -1,3 +1,10 @@
+// Der Code wurde um folgende Features erweitert:
+// - Eingeschränkter Chat für nicht eingeloggte Nutzer (max. 10 Nachrichten)
+// - Loginpflicht-Popup nach Limit
+// - Kein Anzeigen der Chatliste ohne Login
+// - Nachträgliches Bearbeiten von Chatnamen
+// - Speicherung von Loginstatus mit Erinnerungsfunktion
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -5,42 +12,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SkriptAI</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background-color: #0f0f0f;
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #222;
       color: white;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    .chat-message {
-      background-color: #333;
-      color: white;
-      padding: 10px;
+      padding: 20px;
       border-radius: 10px;
-      margin: 5px;
-    }
-    .light-mode {
-      background-color: white;
-      color: black;
-    }
-    .light-mode .chat-message {
-      background-color: #ccc;
-      color: black;
-    }
-    #appTitle {
-      font-size: 2em;
+      display: none;
+      z-index: 999;
       text-align: center;
-      padding: 15px;
-      font-weight: bold;
     }
   </style>
   <script>
     let currentLanguage = '';
-    let currentUser = null;
+    let currentUser = localStorage.getItem('skriptai_current_user') || null;
     let currentChatId = null;
+    let messageCounter = parseInt(localStorage.getItem('skriptai_message_count')) || 0;
     const users = JSON.parse(localStorage.getItem('skriptai_users') || '{}');
 
     function saveUsers() {
@@ -49,19 +39,30 @@
 
     function handleForm(event) {
       event.preventDefault();
-      if (!currentUser || !currentChatId) {
-        alert("Bitte einloggen und Chat auswählen");
-        return;
-      }
       const chatBox = document.getElementById("chatBox");
       const message = chatBox.value.trim();
-      if (message !== "") {
-        appendMessage(message);
-        const response = "Die Software ist noch nicht fertig gecoded, Digga.";
-        appendMessage(response);
-        chatBox.value = "";
-        saveChat();
+      if (message === "") return;
+
+      if (!currentUser) {
+        messageCounter++;
+        localStorage.setItem('skriptai_message_count', messageCounter);
+        if (messageCounter > 10) {
+          showPopup(currentLanguage === 'en' ? "Please log in to continue chatting." : "Bitte logge dich ein, um weiterzuschreiben.");
+          chatBox.disabled = true;
+          document.getElementById("sendBtn").disabled = true;
+          return;
+        }
+      } else {
+        if (!currentChatId) newChat();
       }
+
+      if (currentUser && users[currentUser].chats[currentChatId].length === 0) {
+        updateChatName(currentChatId, message);
+      }
+      appendMessage(message);
+      appendMessage(currentLanguage === 'en' ? "The software isn't finished yet." : "Die Software ist noch nicht fertig gecoded.");
+      chatBox.value = "";
+      if (currentUser) saveChat();
     }
 
     function appendMessage(text) {
@@ -71,7 +72,7 @@
       msg.textContent = text;
       chatContainer.appendChild(msg);
       chatContainer.scrollTop = chatContainer.scrollHeight;
-      users[currentUser].chats[currentChatId].push(text);
+      if (currentUser) users[currentUser].chats[currentChatId].push(text);
     }
 
     function toggleTheme() {
@@ -81,14 +82,11 @@
     function chooseLanguage(lang) {
       currentLanguage = lang;
       document.getElementById("languageSelect").style.display = "none";
-      document.getElementById("mainApp").style.display = "block";
+      document.getElementById("mainApp").style.display = "flex";
     }
 
     function newChat() {
-      if (!currentUser) {
-        alert("Bitte einloggen.");
-        return;
-      }
+      if (!currentUser) return;
       const id = "chat_" + Date.now();
       users[currentUser].chats[id] = [];
       currentChatId = id;
@@ -104,79 +102,83 @@
       users[currentUser].chats[id].forEach(m => appendMessage(m));
     }
 
-    function deleteChat(id) {
-      if (confirm("Diesen Chat löschen?")) {
-        delete users[currentUser].chats[id];
-        if (currentChatId === id) {
-          document.getElementById("chatContainer").innerHTML = "";
-          currentChatId = null;
-        }
-        saveUsers();
-        updateChatList();
-      }
-    }
-
     function updateChatList() {
       const list = document.getElementById("chatList");
       list.innerHTML = "";
+      if (!currentUser) return;
       Object.entries(users[currentUser].chats).forEach(([id, msgs]) => {
-        const container = document.createElement("div");
+        const name = msgs[0] || id;
         const btn = document.createElement("button");
-        btn.textContent = id;
+        btn.textContent = name;
         btn.onclick = () => loadChat(id);
-
-        const del = document.createElement("button");
-        del.textContent = "❌";
-        del.onclick = () => deleteChat(id);
-
-        container.appendChild(btn);
-        container.appendChild(del);
-        list.appendChild(container);
+        btn.oncontextmenu = (e) => {
+          e.preventDefault();
+          const newName = prompt(currentLanguage === 'en' ? "Rename chat:" : "Chat umbenennen:", name);
+          if (newName) {
+            users[currentUser].chats[id][0] = newName;
+            updateChatList();
+            saveUsers();
+          }
+        };
+        list.appendChild(btn);
       });
+    }
+
+    function updateChatName(id, name) {
+      users[currentUser].chats[id][0] = name;
+      updateChatList();
     }
 
     function login() {
       const username = prompt("Benutzername:");
       const password = prompt("Passwort:");
-
       if (!users[username]) {
         users[username] = { password: password, chats: {} };
-        alert("Benutzer erstellt!");
       } else if (users[username].password !== password) {
         alert("Falsches Passwort!");
         return;
       }
-
       currentUser = username;
+      localStorage.setItem('skriptai_current_user', username);
+      messageCounter = 0;
+      localStorage.setItem('skriptai_message_count', '0');
       updateChatList();
-      document.getElementById("loginBtn").disabled = true;
+      document.getElementById("loginBtn").style.display = "none";
+      document.getElementById("logoutBtn").style.display = "inline-block";
+      document.getElementById("chatBox").disabled = false;
+      document.getElementById("sendBtn").disabled = false;
+    }
+
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('skriptai_current_user');
+      localStorage.removeItem('skriptai_message_count');
+      location.reload();
     }
 
     function saveChat() {
       saveUsers();
     }
 
+    function showPopup(text) {
+      const popup = document.getElementById("popup");
+      popup.textContent = text;
+      popup.style.display = "block";
+      setTimeout(() => popup.style.display = "none", 4000);
+    }
+
     window.onload = () => {
-      updateChatList();
+      if (currentUser) {
+        document.getElementById("languageSelect").style.display = "none";
+        document.getElementById("mainApp").style.display = "flex";
+        document.getElementById("loginBtn").style.display = "none";
+        document.getElementById("logoutBtn").style.display = "inline-block";
+        updateChatList();
+      }
     }
   </script>
 </head>
 <body>
-  <div id="languageSelect">
-    <button onclick="chooseLanguage('de')">Deutsch</button>
-    <button onclick="chooseLanguage('en')">English</button>
-  </div>
-  <div id="mainApp" style="display:none">
-    <div id="appTitle">SkriptAI</div>
-    <button id="loginBtn" onclick="login()">Einloggen</button>
-    <button onclick="toggleTheme()">Farbe wechseln</button>
-    <button onclick="newChat()">Neuer Chat</button>
-    <div id="chatList"></div>
-    <div id="chatContainer" style="flex-grow:1; overflow-y:auto; height:300px;"></div>
-    <form onsubmit="handleForm(event)" style="margin-top:10px">
-      <input type="text" id="chatBox" placeholder="Nachricht eingeben..." />
-      <button type="submit">Senden</button>
-    </form>
-  </div>
+  <div id="popup" class="popup"></div>
 </body>
 </html>
