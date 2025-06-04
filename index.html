@@ -5,116 +5,146 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SkriptAI</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background-color: #0f0f0f;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      height: 100vh;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 20px;
-      background-color: #1a1a1a;
-    }
-    .header .info {
-      display: flex;
-      align-items: center;
-    }
-    .register-box {
-      background-color: #333;
-      padding: 8px 16px;
-      border-radius: 20px;
-      margin-left: 10px;
-      color: white;
-      border: none;
-    }
-    .chat-container {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 0 20px;
-    }
-    .chat-box {
-      width: 100%;
-      max-width: 600px;
-      padding: 10px;
-      border: none;
-      border-radius: 10px;
-      margin: 10px 0;
-    }
-    .chat-response {
-      margin-top: 10px;
-      font-size: 1.2em;
-    }
-    .input-area {
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-      background-color: #1a1a1a;
-    }
-    .input-area form {
-      display: flex;
-      width: 100%;
-      max-width: 600px;
-    }
-    .input-area input[type="text"] {
-      flex: 1;
-      padding: 12px;
-      border-radius: 20px;
-      border: none;
-      margin-right: 10px;
-    }
-    .input-area input[type="submit"] {
-      padding: 12px 20px;
-      border-radius: 20px;
-      border: none;
-      background-color: #4caf50;
-      color: white;
-      cursor: pointer;
-    }
   </style>
   <script>
+    let currentLanguage = '';
+    let currentUser = null;
+    let currentChatId = null;
+    const users = JSON.parse(localStorage.getItem('skriptai_users') || '{}');
+
+    function saveUsers() {
+      localStorage.setItem('skriptai_users', JSON.stringify(users));
+    }
+
     function handleForm(event) {
       event.preventDefault();
-      const chatBox = document.getElementById("chatBox");
-      const response = document.getElementById("chatResponse");
-      if (chatBox.value.trim() !== "") {
-        response.innerText = "Upps! Die Software ist noch nicht fertig gecoded.";
-        chatBox.value = "";
+      if (!currentUser || !currentChatId) {
+        alert(currentLanguage === 'en' ? "Please log in and select a chat." : "Bitte logge dich ein und wähle einen Chat aus.");
+        return;
       }
+      const chatBox = document.getElementById("chatBox");
+      const message = chatBox.value.trim();
+      if (message !== "") {
+        appendMessage(message);
+        const response = currentLanguage === 'en' ? "The software isn't fully coded yet, bro." : "Die Software ist noch nicht fertig gecoded, Digga.";
+        appendMessage(response);
+        chatBox.value = "";
+        saveChat();
+      }
+    }
+
+    function appendMessage(text) {
+      const chatContainer = document.getElementById("chatContainer");
+      const msg = document.createElement("div");
+      msg.className = "chat-message";
+      msg.textContent = text;
+      chatContainer.appendChild(msg);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      users[currentUser].chats[currentChatId].push(text);
+    }
+
+    function toggleTheme() {
+      const body = document.body;
+      const btn = document.getElementById("toggleButton");
+      const light = body.classList.toggle("light-mode");
+      btn.textContent = light ? (currentLanguage === 'en' ? "Dark" : "Schwarz") : (currentLanguage === 'en' ? "Light" : "Weiß");
+    }
+
+    function chooseLanguage(lang) {
+      currentLanguage = lang;
+      document.getElementById("languageSelect").style.display = "none";
+      document.getElementById("mainApp").style.display = "flex";
+      document.getElementById("loginText").textContent = lang === 'en' ? "Log in to save chats" : "Einloggen um Chats abzuspeichern";
+      document.getElementById("toggleButton").textContent = lang === 'en' ? "Light" : "Weiß";
+      document.getElementById("newChatBtn").textContent = lang === 'en' ? "New Chat" : "Neuen Chat beginnen";
+      document.getElementById("loginBtn").textContent = lang === 'en' ? "Log In" : "Einloggen";
+    }
+
+    function newChat() {
+      if (!currentUser) {
+        alert(currentLanguage === 'en' ? "Please log in." : "Bitte einloggen.");
+        return;
+      }
+      const id = "chat_" + Date.now();
+      users[currentUser].chats[id] = [];
+      currentChatId = id;
+      updateChatList();
+      loadChat(id);
+      saveUsers();
+    }
+
+    function loadChat(id) {
+      currentChatId = id;
+      const container = document.getElementById("chatContainer");
+      container.innerHTML = "";
+      users[currentUser].chats[id].forEach(m => appendMessage(m));
+    }
+
+    function deleteChat(id) {
+      if (confirm(currentLanguage === 'en' ? "Delete this chat?" : "Diesen Chat löschen?")) {
+        delete users[currentUser].chats[id];
+        if (currentChatId === id) {
+          document.getElementById("chatContainer").innerHTML = "";
+          currentChatId = null;
+        }
+        saveUsers();
+        updateChatList();
+      }
+    }
+
+    function updateChatList() {
+      const list = document.getElementById("chatList");
+      list.innerHTML = "";
+      Object.entries(users[currentUser].chats).forEach(([id, msgs]) => {
+        const container = document.createElement("div");
+        container.style.display = "flex";
+        container.style.justifyContent = "space-between";
+        container.style.alignItems = "center";
+        container.style.marginBottom = "5px";
+
+        const btn = document.createElement("button");
+        btn.textContent = id;
+        btn.style.flex = "1";
+        btn.onclick = () => loadChat(id);
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "❌";
+        delBtn.style.marginLeft = "5px";
+        delBtn.onclick = () => deleteChat(id);
+
+        container.appendChild(btn);
+        container.appendChild(delBtn);
+        list.appendChild(container);
+      });
+    }
+
+    function login() {
+      const username = prompt(currentLanguage === 'en' ? "Username:" : "Benutzername:");
+      const password = prompt(currentLanguage === 'en' ? "Password (click cancel to show):" : "Passwort (Abbrechen für Anzeige):");
+
+      if (!users[username]) {
+        users[username] = { password: password || '', chats: {} };
+        alert(currentLanguage === 'en' ? "User created!" : "Benutzer erstellt!");
+      } else if (users[username].password !== (password || '')) {
+        alert(currentLanguage === 'en' ? "Wrong password!" : "Falsches Passwort!");
+        return;
+      }
+      currentUser = username;
+      updateChatList();
+      document.getElementById("loginBtn").disabled = true;
+      saveUsers();
+    }
+
+    function saveChat() {
+      saveUsers();
+    }
+
+    window.onload = () => {
+      updateChatList();
     }
   </script>
 </head>
 <body>
-  <div class="header">
-    <div class="info">
-      <span>Registrieren</span>
-      <input type="text" class="register-box" placeholder="Regristieren">
-    </div>
-    <div>
-      <span>Registrieren um Chats abzuspeichern</span>
-    </div>
-  </div>
-  <div class="chat-container">
-    <h1>SkriptAI</h1>
-    <p>Wir sind bald verfügbar.</p>
-    <div class="chat-response" id="chatResponse"></div>
-  </div>
-  <div class="input-area">
-    <form onsubmit="handleForm(event)">
-      <input type="text" id="chatBox" placeholder="Nachricht eingeben...">
-      <input type="submit" value="Senden">
-    </form>
-  </div>
 </body>
 </html>
