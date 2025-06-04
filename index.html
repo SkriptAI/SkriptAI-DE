@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SkriptAI</title>
   <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #0f0f0f;
+      color: white;
+    }
     .popup {
       position: fixed;
       top: 50%;
@@ -53,7 +59,7 @@
         updateChatName(currentChatId, message);
       }
       appendMessage(message);
-      appendMessage(currentLanguage === 'en' ? "The software isn't finished yet." : "Die Software ist noch nicht fertig gecoded.");
+      appendMessage(currentLanguage === 'en' ? "The software isn't finished yet, bro." : "Die Software ist noch nicht fertig gecoded, Digga.");
       chatBox.value = "";
       if (currentUser) saveChat();
     }
@@ -173,5 +179,23 @@
 </head>
 <body>
   <div id="popup" class="popup"></div>
+  <div id="languageSelect">
+    <h2 style="text-align:center; margin-top:20vh;">Choose Language</h2>
+    <div style="text-align:center;">
+      <button onclick="chooseLanguage('de')">Deutsch</button>
+      <button onclick="chooseLanguage('en')">English</button>
+    </div>
+  </div>
+  <div id="mainApp" style="display:none; flex-direction:column; align-items:center;">
+    <h1>SkriptAI</h1>
+    <div id="chatList"></div>
+    <div id="chatContainer" style="width: 90%; height: 300px; overflow-y: auto; border: 1px solid #444; margin: 10px; padding: 10px;"></div>
+    <form onsubmit="handleForm(event)" style="width: 90%; display: flex; flex-direction: column; align-items: center;">
+      <textarea id="chatBox" rows="1" style="width: 100%; padding: 10px; border-radius: 10px;"></textarea>
+      <button id="sendBtn" type="submit">Senden</button>
+    </form>
+    <button id="loginBtn" onclick="login()">Einloggen</button>
+    <button id="logoutBtn" onclick="logout()" style="display:none">Ausloggen</button>
+  </div>
 </body>
 </html>
