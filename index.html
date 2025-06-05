@@ -59,7 +59,7 @@
         updateChatName(currentChatId, message);
       }
       appendMessage(message);
-      appendMessage(currentLanguage === 'en' ? "The software isn't finished yet, bro." : "Die Software ist noch nicht fertig gecoded, Digga.");
+      appendMessage(currentLanguage === 'en' ? "The software isn't finished yet, wait a minute." : "Die Software ist noch nicht fertig gecoded.");
       chatBox.value = "";
       if (currentUser) saveChat();
     }
@@ -189,7 +189,7 @@
   <div id="mainApp" style="display:none; flex-direction:column; align-items:center;">
     <h1>SkriptAI</h1>
     <div id="chatList"></div>
-    <div id="chatContainer" style="width: 90%; height: 300px; overflow-y: auto; border: 1px solid #444; margin: 10px; padding: 10px;"></div>
+    <div id="chatContainer" style="width: 90%; height: 50px; overflow-y: auto; border: 1px solid #444; margin: 10px; padding: 10px;"></div>
     <form onsubmit="handleForm(event)" style="width: 90%; display: flex; flex-direction: column; align-items: center;">
       <textarea id="chatBox" rows="1" style="width: 100%; padding: 10px; border-radius: 10px;"></textarea>
       <button id="sendBtn" type="submit">Senden</button>
