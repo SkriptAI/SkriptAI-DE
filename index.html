@@ -7,7 +7,7 @@
   <style>
     body {
       margin: 0;
-      font-family: Lato, roboto;
+      font-family: inter, inter;
       background-color: #0f0f0f;
       color: white;
     }
@@ -200,3 +200,36 @@
   </div>
 </body>
 </html>
+
+
+const fs = require('fs');
+const path = require('path');
+
+// Pfad zur Logdatei (z.B. im Projektverzeichnis)
+const LOG_FILE = path.join(__dirname, 'access.log');
+
+/**
+ * Middleware-Funktion zum IP-Logging.
+ * Fügt für jeden Request einen Eintrag in die Datei 'access.log' hinzu.
+ */
+function ipLogger(req, res, next) {
+  // Echte Client-IP ermitteln (auch hinter Reverse-Proxys möglich)
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = forwarded ? forwarded.split(',')[0].trim() : req.connection.remoteAddress;
+  const timestamp = new Date().toISOString();
+
+  // Log-Eintrag formatieren
+  const logEntry = `${timestamp} - IP: ${ip} - URL: ${req.originalUrl}\n`;
+
+  // In Datei schreiben (append)
+  fs.appendFile(LOG_FILE, logEntry, (err) => {
+    if (err) {
+      console.error('Fehler beim Schreiben des IP-Logs:', err);
+    }
+  });
+
+  // Middleware weitergeben
+  next();
+}
+
+module.exports = ipLogger;
